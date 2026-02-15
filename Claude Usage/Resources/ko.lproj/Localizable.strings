@@ -771,3 +771,12 @@
 "wizard.migrate_description_short" = "이전 앱 버전에서 이전 프로필 데이터 가져오기";
 "wizard.skip_migration" = "건너뛰기";
 "wizard.migration_skipped" = "건너뜀";
+
+/* ==================== */
+/* MARK: - ETA Estimates */
+/* ==================== */
+"menubar.eta_calculating" = "한도 도달 시간 추정 중...";
+"menubar.eta_wont_reach" = "재설정 전에 한도에 도달하지 않음";
+"menubar.eta_reaches_100" = "약 %@ 후 100%% 도달 예상";
+"menubar.eta_at_limit" = "사용 한도 도달";
+"menubar.eta_no_activity" = "최근 사용 활동 없음";

@@ -709,3 +709,12 @@
 "wizard.migrate_description_short" = "Importa i tuoi vecchi dati dei profili dalla versione precedente dell'app";
 "wizard.skip_migration" = "Salta";
 "wizard.migration_skipped" = "Saltato";
+
+/* ==================== */
+/* MARK: - ETA Estimates */
+/* ==================== */
+"menubar.eta_calculating" = "Stima del tempo al limite...";
+"menubar.eta_wont_reach" = "Non raggiungerà il limite prima del ripristino";
+"menubar.eta_reaches_100" = "Est. 100%% in ~%@";
+"menubar.eta_at_limit" = "Limite di utilizzo raggiunto";
+"menubar.eta_no_activity" = "Nessuna attività di utilizzo recente";

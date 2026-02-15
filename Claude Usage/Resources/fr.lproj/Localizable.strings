@@ -689,3 +689,12 @@
 "wizard.migrate_description_short" = "Importer vos anciennes données de profils depuis la version précédente de l'application";
 "wizard.skip_migration" = "Ignorer";
 "wizard.migration_skipped" = "Ignoré";
+
+/* ==================== */
+/* MARK: - ETA Estimates */
+/* ==================== */
+"menubar.eta_calculating" = "Estimation du temps avant la limite...";
+"menubar.eta_wont_reach" = "N'atteindra pas la limite avant la réinitialisation";
+"menubar.eta_reaches_100" = "Est. 100%% dans ~%@";
+"menubar.eta_at_limit" = "Limite d'utilisation atteinte";
+"menubar.eta_no_activity" = "Aucune activité d'utilisation récente";

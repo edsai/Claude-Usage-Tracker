@@ -747,6 +747,9 @@ class MenuBarManager: NSObject, ObservableObject {
                         self.profileManager.saveClaudeUsage(newUsage, for: profile.id)
                         LoggingService.shared.log("MenuBarManager: Saved usage for profile '\(profile.name)' - session: \(newUsage.sessionPercentage)%")
 
+                        // Record sample for ETA tracking
+                        UsageRateTracker.shared.recordSample(usage: newUsage, profileId: profile.id)
+
                         // If this is the active profile, also update the manager's usage
                         if profile.id == self.profileManager.activeProfile?.id {
                             self.usage = newUsage
@@ -860,6 +863,9 @@ class MenuBarManager: NSObject, ObservableObject {
                     // Save to active profile instead of global DataStore
                     if let profileId = self.profileManager.activeProfile?.id {
                         self.profileManager.saveClaudeUsage(newUsage, for: profileId)
+
+                        // Record sample for ETA tracking
+                        UsageRateTracker.shared.recordSample(usage: newUsage, profileId: profileId)
                     }
 
                     // Update all menu bar icons

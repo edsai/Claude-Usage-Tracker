@@ -711,3 +711,12 @@
 "wizard.migrate_description_short" = "Importieren Sie Ihre alten Profildaten aus der vorherigen App-Version";
 "wizard.skip_migration" = "Überspringen";
 "wizard.migration_skipped" = "Übersprungen";
+
+/* ==================== */
+/* MARK: - ETA Estimates */
+/* ==================== */
+"menubar.eta_calculating" = "Schätze Zeit bis zum Limit...";
+"menubar.eta_wont_reach" = "Limit wird vor Zurücksetzung nicht erreicht";
+"menubar.eta_reaches_100" = "Voraussichtlich 100%% in ~%@";
+"menubar.eta_at_limit" = "Nutzungslimit erreicht";
+"menubar.eta_no_activity" = "Keine aktuelle Nutzungsaktivität";

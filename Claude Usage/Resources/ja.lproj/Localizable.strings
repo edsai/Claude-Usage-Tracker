@@ -711,3 +711,12 @@
 "wizard.migrate_description_short" = "以前のアプリバージョンから古いプロファイルデータをインポート";
 "wizard.skip_migration" = "スキップ";
 "wizard.migration_skipped" = "スキップしました";
+
+/* ==================== */
+/* MARK: - ETA Estimates */
+/* ==================== */
+"menubar.eta_calculating" = "制限到達時間を推定中...";
+"menubar.eta_wont_reach" = "リセット前に制限に達しません";
+"menubar.eta_reaches_100" = "約%@で100%%に到達予定";
+"menubar.eta_at_limit" = "使用制限に達しました";
+"menubar.eta_no_activity" = "最近の使用アクティビティなし";

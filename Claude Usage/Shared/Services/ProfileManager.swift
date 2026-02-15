@@ -113,6 +113,9 @@ class ProfileManager: ObservableObject {
 
         profiles.removeAll { $0.id == id }
 
+        // Clean up usage rate history
+        UsageRateTracker.shared.clearHistory(for: id)
+
         // Credentials are deleted automatically with the profile
 
         // Switch to first profile if deleted active

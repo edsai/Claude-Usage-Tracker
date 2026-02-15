@@ -44,7 +44,11 @@ struct PopoverContentView: View {
             )
 
             // Intelligent Usage Dashboard
-            SmartUsageDashboard(usage: displayUsage, apiUsage: displayAPIUsage)
+            SmartUsageDashboard(
+                usage: displayUsage,
+                apiUsage: displayAPIUsage,
+                profileId: manager.clickedProfileId ?? ProfileManager.shared.activeProfile?.id
+            )
 
             // Contextual Insights
             if showInsights {
@@ -485,6 +489,7 @@ struct SmartHeader: View {
 struct SmartUsageDashboard: View {
     let usage: ClaudeUsage
     let apiUsage: APIUsage?
+    var profileId: UUID? = nil
     @StateObject private var profileManager = ProfileManager.shared
 
     // Get the display mode from active profile's icon config
@@ -497,6 +502,26 @@ struct SmartUsageDashboard: View {
         DataStore.shared.loadAPITrackingEnabled()
     }
 
+    private var sessionETA: UsageETAEstimate? {
+        guard let id = profileId else { return nil }
+        return UsageRateTracker.shared.estimateTimeToFull(
+            type: .session,
+            currentPercentage: usage.sessionPercentage,
+            resetTime: usage.sessionResetTime,
+            profileId: id
+        )
+    }
+
+    private var weeklyETA: UsageETAEstimate? {
+        guard let id = profileId else { return nil }
+        return UsageRateTracker.shared.estimateTimeToFull(
+            type: .weekly,
+            currentPercentage: usage.weeklyPercentage,
+            resetTime: usage.weeklyResetTime,
+            profileId: id
+        )
+    }
+
     var body: some View {
         VStack(spacing: 16) {
             // Primary Usage Card
@@ -506,7 +531,8 @@ struct SmartUsageDashboard: View {
                 usedPercentage: usage.sessionPercentage,
                 showRemaining: showRemainingPercentage,
                 resetTime: usage.sessionResetTime,
-                isPrimary: true
+                isPrimary: true,
+                etaEstimate: sessionETA
             )
 
             // Secondary Usage Cards
@@ -517,7 +543,8 @@ struct SmartUsageDashboard: View {
                     usedPercentage: usage.weeklyPercentage,
                     showRemaining: showRemainingPercentage,
                     resetTime: usage.weeklyResetTime,
-                    isPrimary: false
+                    isPrimary: false,
+                    etaEstimate: weeklyETA
                 )
 
                 if usage.opusWeeklyTokensUsed > 0 {
@@ -576,6 +603,7 @@ struct SmartUsageCard: View {
     let showRemaining: Bool
     let resetTime: Date?
     let isPrimary: Bool
+    var etaEstimate: UsageETAEstimate? = nil
 
     /// Display percentage based on mode
     private var displayPercentage: Double {
@@ -670,6 +698,19 @@ struct SmartUsageCard: View {
                             .foregroundColor(.secondary)
                     }
                 }
+
+                // ETA to 100%
+                if let eta = etaEstimate {
+                    HStack(spacing: 4) {
+                        Image(systemName: etaIconName(for: eta))
+                            .font(.system(size: isPrimary ? 9 : 8, weight: .medium))
+                            .foregroundColor(etaColor(for: eta))
+                        Text(etaDisplayString(for: eta))
+                            .font(.system(size: isPrimary ? 9 : 8, weight: .medium))
+                            .foregroundColor(etaColor(for: eta))
+                        Spacer()
+                    }
+                }
             }
         }
         .padding(isPrimary ? 16 : 12)
@@ -677,6 +718,55 @@ struct SmartUsageCard: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color(nsColor: .controlBackgroundColor).opacity(0.4))
         )
+    }
+
+    // MARK: - ETA Helpers
+
+    private func etaDisplayString(for estimate: UsageETAEstimate) -> String {
+        switch estimate {
+        case .calculating:
+            return "menubar.eta_calculating".localized
+        case .estimatedTime(let date):
+            let timeString = date.timeRemainingString()
+            return "menubar.eta_reaches_100".localized(with: timeString)
+        case .wontReachBeforeReset:
+            return "menubar.eta_wont_reach".localized
+        case .alreadyAtLimit:
+            return "menubar.eta_at_limit".localized
+        case .noActivity:
+            return "menubar.eta_no_activity".localized
+        }
+    }
+
+    private func etaColor(for estimate: UsageETAEstimate) -> Color {
+        switch estimate {
+        case .calculating, .noActivity:
+            return .secondary
+        case .wontReachBeforeReset:
+            return .green
+        case .alreadyAtLimit:
+            return .red
+        case .estimatedTime(let date):
+            let seconds = date.timeIntervalSinceNow
+            if seconds < 1800 { return .red }       // < 30 min
+            if seconds < 3600 { return .orange }     // < 1 hour
+            return .secondary
+        }
+    }
+
+    private func etaIconName(for estimate: UsageETAEstimate) -> String {
+        switch estimate {
+        case .calculating:
+            return "hourglass"
+        case .estimatedTime:
+            return "clock.arrow.trianglehead.counterclockwise.rotate.90"
+        case .wontReachBeforeReset:
+            return "checkmark.shield.fill"
+        case .alreadyAtLimit:
+            return "exclamationmark.circle.fill"
+        case .noActivity:
+            return "minus.circle"
+        }
     }
 }
 
