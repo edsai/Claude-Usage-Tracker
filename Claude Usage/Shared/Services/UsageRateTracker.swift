@@ -12,12 +12,20 @@ final class UsageRateTracker {
     static let shared = UsageRateTracker()
 
     /// Rolling window durations
-    private static let sessionWindowSeconds: TimeInterval = 300   // 5 minutes
-    private static let weeklyWindowSeconds: TimeInterval = 900    // 15 minutes
+    private static let sessionWindowSeconds: TimeInterval = 300     // 5 minutes
+    private static let weeklyWindowSeconds: TimeInterval = 28800    // 8 hours
 
     /// Max sample buffer sizes (headroom beyond rolling window)
     private static let sessionMaxCapacity = 40
-    private static let weeklyMaxCapacity = 60
+    private static let weeklyMaxCapacity = 200
+
+    /// Minimum observation period before making determinations
+    private static let sessionMinObservation: TimeInterval = 120    // 2 minutes
+    private static let weeklyMinObservation: TimeInterval = 600     // 10 minutes
+
+    /// Exponential weight half-lives for weighted regression
+    private static let sessionHalfLife: TimeInterval = 120          // 2 minutes
+    private static let weeklyHalfLife: TimeInterval = 7200          // 2 hours
 
     /// Per-profile histories keyed by profile UUID
     private var sessionHistories: [UUID: UsageSampleHistory] = [:]
@@ -40,7 +48,7 @@ final class UsageRateTracker {
         // Session history
         var sessionHistory = loadSessionHistory(for: profileId)
         if let existingReset = sessionHistory.resetTime,
-           existingReset != usage.sessionResetTime {
+           !existingReset.isSameResetTime(as: usage.sessionResetTime) {
             sessionHistory.clear()
         }
         sessionHistory.resetTime = usage.sessionResetTime
@@ -51,7 +59,7 @@ final class UsageRateTracker {
         // Weekly history
         var weeklyHistory = loadWeeklyHistory(for: profileId)
         if let existingReset = weeklyHistory.resetTime,
-           existingReset != usage.weeklyResetTime {
+           !existingReset.isSameResetTime(as: usage.weeklyResetTime) {
             weeklyHistory.clear()
         }
         weeklyHistory.resetTime = usage.weeklyResetTime
@@ -80,14 +88,20 @@ final class UsageRateTracker {
         }
 
         let windowSeconds: TimeInterval
+        let minObservation: TimeInterval
+        let halfLife: TimeInterval
         let history: UsageSampleHistory
 
         switch type {
         case .session:
             windowSeconds = Self.sessionWindowSeconds
+            minObservation = Self.sessionMinObservation
+            halfLife = Self.sessionHalfLife
             history = loadSessionHistory(for: profileId)
         case .weekly:
             windowSeconds = Self.weeklyWindowSeconds
+            minObservation = Self.weeklyMinObservation
+            halfLife = Self.weeklyHalfLife
             history = loadWeeklyHistory(for: profileId)
         }
 
@@ -105,12 +119,12 @@ final class UsageRateTracker {
             return .calculating
         }
 
-        let percentageDelta = last.percentage - first.percentage
-        let rate = percentageDelta / timeDelta  // percentage points per second
+        let hasEnoughData = timeDelta >= minObservation
 
-        // Rate is zero or negative — no activity
-        guard rate > 0 else {
-            return .noActivity
+        // Compute rate using exponentially-weighted linear regression
+        guard let rate = computeWeightedRate(samples: windowSamples, halfLife: halfLife),
+              rate > 0 else {
+            return hasEnoughData ? .wontReachBeforeReset : .calculating
         }
 
         let remaining = 100.0 - currentPercentage
@@ -123,6 +137,49 @@ final class UsageRateTracker {
         }
 
         return .estimatedTime(projectedFullDate)
+    }
+
+    // MARK: - Weighted Linear Regression
+
+    /// Compute the rate of change (percentage points per second) using
+    /// exponentially-weighted least-squares linear regression.
+    ///
+    /// Each sample is weighted by `exp(-ln(2) * age / halfLife)` where age
+    /// is measured from the most recent sample. This gives recent data more
+    /// influence while still smoothing over the full window.
+    ///
+    /// Returns nil if there aren't enough distinct samples.
+    private func computeWeightedRate(samples: [UsageSample], halfLife: TimeInterval) -> Double? {
+        guard samples.count >= 2, let newest = samples.last else { return nil }
+
+        let referenceTime = newest.timestamp.timeIntervalSince1970
+        let ln2 = 0.693147180559945
+
+        var sumW: Double = 0
+        var sumWx: Double = 0
+        var sumWy: Double = 0
+        var sumWxx: Double = 0
+        var sumWxy: Double = 0
+
+        for sample in samples {
+            let x = sample.timestamp.timeIntervalSince1970 - referenceTime  // negative or zero
+            let y = sample.percentage
+            let age = referenceTime - sample.timestamp.timeIntervalSince1970 // positive
+            let w = exp(-ln2 * age / halfLife)
+
+            sumW += w
+            sumWx += w * x
+            sumWy += w * y
+            sumWxx += w * x * x
+            sumWxy += w * x * y
+        }
+
+        // Weighted least-squares slope: β = (Σw·Σwxy - Σwx·Σwy) / (Σw·Σwxx - Σwx·Σwx)
+        let denominator = sumW * sumWxx - sumWx * sumWx
+        guard abs(denominator) > 1e-15 else { return nil }
+
+        let slope = (sumW * sumWxy - sumWx * sumWy) / denominator
+        return slope  // percentage points per second
     }
 
     // MARK: - Cleanup
@@ -149,7 +206,11 @@ final class UsageRateTracker {
         if let cached = sessionHistories[profileId] {
             return cached
         }
-        let history = loadHistory(key: sessionKey(for: profileId), maxCapacity: Self.sessionMaxCapacity)
+        var history = loadHistory(key: sessionKey(for: profileId), maxCapacity: Self.sessionMaxCapacity)
+        // Migrate capacity if loaded from older data
+        if history.maxCapacity != Self.sessionMaxCapacity {
+            history.maxCapacity = Self.sessionMaxCapacity
+        }
         sessionHistories[profileId] = history
         return history
     }
@@ -158,7 +219,11 @@ final class UsageRateTracker {
         if let cached = weeklyHistories[profileId] {
             return cached
         }
-        let history = loadHistory(key: weeklyKey(for: profileId), maxCapacity: Self.weeklyMaxCapacity)
+        var history = loadHistory(key: weeklyKey(for: profileId), maxCapacity: Self.weeklyMaxCapacity)
+        // Migrate capacity if loaded from older data
+        if history.maxCapacity != Self.weeklyMaxCapacity {
+            history.maxCapacity = Self.weeklyMaxCapacity
+        }
         weeklyHistories[profileId] = history
         return history
     }
@@ -183,5 +248,16 @@ final class UsageRateTracker {
         if let data = try? encoder.encode(history) {
             defaults.set(data, forKey: key)
         }
+    }
+}
+
+// MARK: - Date Comparison Helper
+
+private extension Date {
+    /// Compare two reset times with a 60-second tolerance.
+    /// The API fallback computes reset times from Date(), so they drift
+    /// slightly on every refresh. A tolerance prevents false resets.
+    func isSameResetTime(as other: Date) -> Bool {
+        abs(self.timeIntervalSince(other)) < 60
     }
 }

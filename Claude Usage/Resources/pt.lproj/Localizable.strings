@@ -714,7 +714,11 @@
 /* MARK: - ETA Estimates */
 /* ==================== */
 "menubar.eta_calculating" = "Estimando tempo até o limite...";
+"menubar.eta_calculating_short" = "Estimando...";
 "menubar.eta_wont_reach" = "Não atingirá o limite antes da redefinição";
+"menubar.eta_wont_reach_short" = "Dentro do limite";
 "menubar.eta_reaches_100" = "Est. 100%% em ~%@";
+"menubar.eta_reaches_100_short" = "~%@ até o limite";
 "menubar.eta_at_limit" = "Limite de uso atingido";
 "menubar.eta_no_activity" = "Nenhuma atividade de uso recente";
+"menubar.eta_no_activity_short" = "Sem atividade";

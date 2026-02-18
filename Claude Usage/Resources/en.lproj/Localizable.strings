@@ -706,7 +706,11 @@
 /* MARK: - ETA Estimates */
 /* ==================== */
 "menubar.eta_calculating" = "Estimating time to limit...";
+"menubar.eta_calculating_short" = "Estimating...";
 "menubar.eta_wont_reach" = "Won't reach limit before reset";
+"menubar.eta_wont_reach_short" = "Won't reach limit before reset";
 "menubar.eta_reaches_100" = "Est. 100%% in ~%@";
+"menubar.eta_reaches_100_short" = "~%@ to limit";
 "menubar.eta_at_limit" = "Usage limit reached";
 "menubar.eta_no_activity" = "No recent usage activity";
+"menubar.eta_no_activity_short" = "No activity";

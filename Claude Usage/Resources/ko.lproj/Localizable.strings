@@ -776,7 +776,11 @@
 /* MARK: - ETA Estimates */
 /* ==================== */
 "menubar.eta_calculating" = "한도 도달 시간 추정 중...";
+"menubar.eta_calculating_short" = "추정 중...";
 "menubar.eta_wont_reach" = "재설정 전에 한도에 도달하지 않음";
+"menubar.eta_wont_reach_short" = "한도 내";
 "menubar.eta_reaches_100" = "약 %@ 후 100%% 도달 예상";
+"menubar.eta_reaches_100_short" = "~%@ 후 한도 도달";
 "menubar.eta_at_limit" = "사용 한도 도달";
 "menubar.eta_no_activity" = "최근 사용 활동 없음";
+"menubar.eta_no_activity_short" = "활동 없음";

@@ -699,8 +699,8 @@ struct SmartUsageCard: View {
                     }
                 }
 
-                // ETA to 100%
-                if let eta = etaEstimate {
+                // ETA to 100% (hidden when no usage activity)
+                if let eta = etaEstimate, !eta.isNoActivity {
                     HStack(spacing: 4) {
                         Image(systemName: etaIconName(for: eta))
                             .font(.system(size: isPrimary ? 9 : 8, weight: .medium))
@@ -708,8 +708,11 @@ struct SmartUsageCard: View {
                         Text(etaDisplayString(for: eta))
                             .font(.system(size: isPrimary ? 9 : 8, weight: .medium))
                             .foregroundColor(etaColor(for: eta))
-                        Spacer()
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                        Spacer(minLength: 0)
                     }
+                    .help(etaDisplayString(for: eta))
                 }
             }
         }
@@ -725,16 +728,18 @@ struct SmartUsageCard: View {
     private func etaDisplayString(for estimate: UsageETAEstimate) -> String {
         switch estimate {
         case .calculating:
-            return "menubar.eta_calculating".localized
+            return isPrimary ? "menubar.eta_calculating".localized : "menubar.eta_calculating_short".localized
         case .estimatedTime(let date):
             let timeString = date.timeRemainingString()
-            return "menubar.eta_reaches_100".localized(with: timeString)
+            return isPrimary
+                ? "menubar.eta_reaches_100".localized(with: timeString)
+                : "menubar.eta_reaches_100_short".localized(with: timeString)
         case .wontReachBeforeReset:
-            return "menubar.eta_wont_reach".localized
+            return isPrimary ? "menubar.eta_wont_reach".localized : "menubar.eta_wont_reach_short".localized
         case .alreadyAtLimit:
             return "menubar.eta_at_limit".localized
         case .noActivity:
-            return "menubar.eta_no_activity".localized
+            return isPrimary ? "menubar.eta_no_activity".localized : "menubar.eta_no_activity_short".localized
         }
     }
 
