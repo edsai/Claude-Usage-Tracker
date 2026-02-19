@@ -535,42 +535,45 @@ struct SmartUsageDashboard: View {
                 etaEstimate: sessionETA
             )
 
-            // Secondary Usage Cards
-            HStack(spacing: 12) {
-                SmartUsageCard(
-                    title: "menubar.all_models".localized,
-                    subtitle: "menubar.weekly".localized,
-                    usedPercentage: usage.weeklyPercentage,
-                    showRemaining: showRemainingPercentage,
-                    resetTime: usage.weeklyResetTime,
-                    isPrimary: false,
-                    etaEstimate: weeklyETA,
-                    weeklyETAStyle: profileManager.activeProfile?.iconConfig.config(for: .week)?.weeklyETAStyle,
-                    profileId: profileId
-                )
+            // Model-specific usage (Opus + Sonnet side by side)
+            if usage.opusWeeklyTokensUsed > 0 || usage.sonnetWeeklyTokensUsed > 0 {
+                HStack(spacing: 12) {
+                    if usage.opusWeeklyTokensUsed > 0 {
+                        SmartUsageCard(
+                            title: "menubar.opus_usage".localized,
+                            subtitle: "menubar.weekly".localized,
+                            usedPercentage: usage.opusWeeklyPercentage,
+                            showRemaining: showRemainingPercentage,
+                            resetTime: nil,
+                            isPrimary: false
+                        )
+                    }
 
-                if usage.opusWeeklyTokensUsed > 0 {
-                    SmartUsageCard(
-                        title: "menubar.opus_usage".localized,
-                        subtitle: "menubar.weekly".localized,
-                        usedPercentage: usage.opusWeeklyPercentage,
-                        showRemaining: showRemainingPercentage,
-                        resetTime: nil,
-                        isPrimary: false
-                    )
-                }
-
-                if usage.sonnetWeeklyTokensUsed > 0 {
-                    SmartUsageCard(
-                        title: "menubar.sonnet_usage".localized,
-                        subtitle: "menubar.weekly".localized,
-                        usedPercentage: usage.sonnetWeeklyPercentage,
-                        showRemaining: showRemainingPercentage,
-                        resetTime: usage.sonnetWeeklyResetTime,
-                        isPrimary: false
-                    )
+                    if usage.sonnetWeeklyTokensUsed > 0 {
+                        SmartUsageCard(
+                            title: "menubar.sonnet_usage".localized,
+                            subtitle: "menubar.weekly".localized,
+                            usedPercentage: usage.sonnetWeeklyPercentage,
+                            showRemaining: showRemainingPercentage,
+                            resetTime: usage.sonnetWeeklyResetTime,
+                            isPrimary: false
+                        )
+                    }
                 }
             }
+
+            // Weekly all-models card (full width)
+            SmartUsageCard(
+                title: "menubar.all_models".localized,
+                subtitle: "menubar.weekly".localized,
+                usedPercentage: usage.weeklyPercentage,
+                showRemaining: showRemainingPercentage,
+                resetTime: usage.weeklyResetTime,
+                isPrimary: false,
+                etaEstimate: weeklyETA,
+                weeklyETAStyle: profileManager.activeProfile?.iconConfig.config(for: .week)?.weeklyETAStyle,
+                profileId: profileId
+            )
 
             if let used = usage.costUsed, let limit = usage.costLimit, let currency = usage.costCurrency, limit > 0 {
                 let usedPercentage = (used / limit) * 100.0
