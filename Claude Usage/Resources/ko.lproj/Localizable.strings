@@ -784,3 +784,23 @@
 "menubar.eta_at_limit" = "사용 한도 도달";
 "menubar.eta_no_activity" = "최근 사용 활동 없음";
 "menubar.eta_no_activity_short" = "활동 없음";
+
+/* ==================== */
+/* MARK: - Weekly ETA Styles */
+/* ==================== */
+"weekly_eta.style_title" = "주간 예측 스타일";
+"weekly_eta.projected" = "예상";
+"weekly_eta.projected_desc" = "예보 막대와 함께 재설정 시 예상 사용량 표시";
+"weekly_eta.daily_bars" = "일별 막대";
+"weekly_eta.daily_bars_desc" = "일별 소비량 막대 차트 (월–일)";
+"weekly_eta.budget_gauge" = "예산 게이지";
+"weekly_eta.budget_gauge_desc" = "사용 및 예측 구역이 있는 선형 게이지";
+"weekly_eta.projected_at_reset" = "재설정 시 예상";
+"weekly_eta.today_so_far" = "오늘 현재까지";
+"weekly_eta.daily_average" = "일일 평균";
+"weekly_eta.remaining_budget" = "남은 예산";
+"weekly_eta.daily_consumption" = "일일 소비량";
+"weekly_eta.below_avg" = "평균 이하";
+"weekly_eta.above_avg" = "평균 이상";
+"weekly_eta.per_day" = "%@/일";
+"weekly_eta.for_days" = "%@(%@일간)";

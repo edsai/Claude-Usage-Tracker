@@ -66,6 +66,13 @@ final class UsageRateTracker {
         weeklyHistory.addSample(weeklySample)
         weeklyHistories[profileId] = weeklyHistory
         saveWeeklyHistory(weeklyHistory, for: profileId)
+
+        // Record daily snapshot for weekly ETA views
+        DailyConsumptionTracker.shared.recordIfNeeded(
+            weeklyPercentage: usage.weeklyPercentage,
+            resetTime: usage.weeklyResetTime,
+            profileId: profileId
+        )
     }
 
     // MARK: - ETA Estimation
@@ -190,6 +197,7 @@ final class UsageRateTracker {
         weeklyHistories.removeValue(forKey: profileId)
         defaults.removeObject(forKey: sessionKey(for: profileId))
         defaults.removeObject(forKey: weeklyKey(for: profileId))
+        DailyConsumptionTracker.shared.clearHistory(for: profileId)
     }
 
     // MARK: - Persistence

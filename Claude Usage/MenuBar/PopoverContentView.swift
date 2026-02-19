@@ -544,7 +544,9 @@ struct SmartUsageDashboard: View {
                     showRemaining: showRemainingPercentage,
                     resetTime: usage.weeklyResetTime,
                     isPrimary: false,
-                    etaEstimate: weeklyETA
+                    etaEstimate: weeklyETA,
+                    weeklyETAStyle: profileManager.activeProfile?.iconConfig.config(for: .week)?.weeklyETAStyle,
+                    profileId: profileId
                 )
 
                 if usage.opusWeeklyTokensUsed > 0 {
@@ -604,6 +606,8 @@ struct SmartUsageCard: View {
     let resetTime: Date?
     let isPrimary: Bool
     var etaEstimate: UsageETAEstimate? = nil
+    var weeklyETAStyle: WeeklyETAStyle? = nil
+    var profileId: UUID? = nil
 
     /// Display percentage based on mode
     private var displayPercentage: Double {
@@ -699,8 +703,31 @@ struct SmartUsageCard: View {
                     }
                 }
 
-                // ETA to 100% (hidden when no usage activity)
-                if let eta = etaEstimate, !eta.isNoActivity {
+                // Weekly ETA style views (for weekly cards with a selected style)
+                if let style = weeklyETAStyle, let pid = profileId {
+                    switch style {
+                    case .projected:
+                        WeeklyProjectedView(
+                            currentPercentage: usedPercentage,
+                            resetTime: resetTime,
+                            profileId: pid,
+                            isPrimary: isPrimary
+                        )
+                    case .dailyBars:
+                        WeeklyDailyBarsView(
+                            currentPercentage: usedPercentage,
+                            resetTime: resetTime,
+                            profileId: pid
+                        )
+                    case .budgetGauge:
+                        WeeklyBudgetGaugeView(
+                            currentPercentage: usedPercentage,
+                            resetTime: resetTime,
+                            profileId: pid
+                        )
+                    }
+                } else if let eta = etaEstimate, !eta.isNoActivity {
+                    // ETA to 100% (hidden when no usage activity)
                     HStack(spacing: 4) {
                         Image(systemName: etaIconName(for: eta))
                             .font(.system(size: isPrimary ? 9 : 8, weight: .medium))
@@ -771,6 +798,411 @@ struct SmartUsageCard: View {
             return "exclamationmark.circle.fill"
         case .noActivity:
             return "minus.circle"
+        }
+    }
+}
+
+// MARK: - Weekly Projected View (Style A)
+struct WeeklyProjectedView: View {
+    let currentPercentage: Double
+    let resetTime: Date?
+    let profileId: UUID
+    let isPrimary: Bool
+
+    private var tracker: DailyConsumptionTracker { .shared }
+
+    private var projected: Double {
+        tracker.projectedAtReset(currentPercentage: currentPercentage, resetTime: resetTime, profileId: profileId)
+    }
+
+    private var todayUsage: Double {
+        tracker.todayConsumption(currentPercentage: currentPercentage, profileId: profileId)
+    }
+
+    private var avgPace: Double {
+        tracker.averageDailyPace(currentPercentage: currentPercentage, profileId: profileId)
+    }
+
+    private var budgetPerDay: Double {
+        tracker.remainingBudgetPerDay(currentPercentage: currentPercentage, resetTime: resetTime)
+    }
+
+    private var projectedColor: Color {
+        if projected < 80 { return .green }
+        if projected < 95 { return .orange }
+        return .red
+    }
+
+    private var todayBadge: String? {
+        guard avgPace > 0 else { return nil }
+        return todayUsage < avgPace ? "weekly_eta.below_avg".localized : "weekly_eta.above_avg".localized
+    }
+
+    private var todayBadgeColor: Color {
+        guard avgPace > 0 else { return .secondary }
+        return todayUsage < avgPace ? .green : .orange
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            // Projected at reset row
+            HStack {
+                Text("weekly_eta.projected_at_reset".localized)
+                    .font(.system(size: isPrimary ? 9 : 8, weight: .medium))
+                    .foregroundColor(.secondary)
+                Spacer()
+                Text("~\(Int(projected))%")
+                    .font(.system(size: isPrimary ? 10 : 9, weight: .bold, design: .monospaced))
+                    .foregroundColor(projectedColor)
+            }
+
+            // Forecast bar
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    // Background track
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color.secondary.opacity(0.15))
+
+                    // Used portion (solid)
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(projectedColor.opacity(0.7))
+                        .frame(width: geometry.size.width * min(currentPercentage / 100.0, 1.0))
+
+                    // Forecast zone (striped)
+                    if projected > currentPercentage {
+                        let startX = geometry.size.width * min(currentPercentage / 100.0, 1.0)
+                        let forecastWidth = geometry.size.width * min((projected - currentPercentage) / 100.0, 1.0 - currentPercentage / 100.0)
+                        StripedFill(color: projectedColor.opacity(0.3))
+                            .frame(width: forecastWidth)
+                            .offset(x: startX)
+                            .clipShape(RoundedRectangle(cornerRadius: 2))
+                    }
+
+                    // 100% tick mark
+                    if projected < 100 {
+                        Rectangle()
+                            .fill(Color.red.opacity(0.6))
+                            .frame(width: 1.5)
+                            .offset(x: geometry.size.width - 1)
+                    }
+                }
+            }
+            .frame(height: 5)
+
+            // Labels below bar
+            HStack {
+                Text("\(Int(currentPercentage))% now")
+                    .font(.system(size: 7, weight: .medium))
+                    .foregroundColor(.secondary)
+                Spacer()
+                Text("~\(Int(projected))%")
+                    .font(.system(size: 7, weight: .medium))
+                    .foregroundColor(.secondary)
+            }
+
+            // Info rows
+            VStack(spacing: 3) {
+                // Today so far
+                HStack(spacing: 4) {
+                    Circle().fill(Color.purple).frame(width: 4, height: 4)
+                    Text("weekly_eta.today_so_far".localized)
+                        .font(.system(size: 8, weight: .medium))
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text("+\(Int(todayUsage))%")
+                        .font(.system(size: 8, weight: .semibold, design: .monospaced))
+                        .foregroundColor(.primary)
+                    if let badge = todayBadge {
+                        Text(badge)
+                            .font(.system(size: 7, weight: .medium))
+                            .foregroundColor(todayBadgeColor)
+                            .padding(.horizontal, 3)
+                            .padding(.vertical, 1)
+                            .background(todayBadgeColor.opacity(0.12), in: Capsule())
+                    }
+                }
+
+                // Daily average
+                HStack(spacing: 4) {
+                    Circle().fill(Color.orange).frame(width: 4, height: 4)
+                    Text("weekly_eta.daily_average".localized)
+                        .font(.system(size: 8, weight: .medium))
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text("~\(Int(avgPace))%/day")
+                        .font(.system(size: 8, weight: .semibold, design: .monospaced))
+                        .foregroundColor(.primary)
+                }
+
+                // Remaining budget
+                HStack(spacing: 4) {
+                    Circle().fill(Color.green).frame(width: 4, height: 4)
+                    Text("weekly_eta.remaining_budget".localized)
+                        .font(.system(size: 8, weight: .medium))
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text("~\(Int(budgetPerDay))%/day")
+                        .font(.system(size: 8, weight: .semibold, design: .monospaced))
+                        .foregroundColor(.primary)
+                }
+            }
+            .padding(.top, 2)
+        }
+    }
+}
+
+// MARK: - Weekly Daily Bars View (Style B)
+struct WeeklyDailyBarsView: View {
+    let currentPercentage: Double
+    let resetTime: Date?
+    let profileId: UUID
+
+    private var tracker: DailyConsumptionTracker { .shared }
+
+    private var deltas: [DailyDelta] {
+        tracker.dailyDeltas(currentPercentage: currentPercentage, resetTime: resetTime, profileId: profileId)
+    }
+
+    private var projected: Double {
+        tracker.projectedAtReset(currentPercentage: currentPercentage, resetTime: resetTime, profileId: profileId)
+    }
+
+    private var avgPace: Double {
+        tracker.averageDailyPace(currentPercentage: currentPercentage, profileId: profileId)
+    }
+
+    private var budgetPerDay: Double {
+        tracker.remainingBudgetPerDay(currentPercentage: currentPercentage, resetTime: resetTime)
+    }
+
+    private var maxDelta: Double {
+        max(deltas.map(\.delta).max() ?? 1, 1)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            // Header
+            HStack {
+                Text("weekly_eta.daily_consumption".localized)
+                    .font(.system(size: 8, weight: .medium))
+                    .foregroundColor(.secondary)
+                Spacer()
+                Text("~\(Int(projected))%")
+                    .font(.system(size: 8, weight: .bold, design: .monospaced))
+                    .foregroundColor(projected < 80 ? .green : projected < 95 ? .orange : .red)
+            }
+
+            // Bar chart
+            HStack(alignment: .bottom, spacing: 3) {
+                ForEach(Array(deltas.enumerated()), id: \.offset) { _, delta in
+                    VStack(spacing: 2) {
+                        // Delta label on top
+                        if delta.delta > 0 {
+                            Text("\(Int(delta.delta))")
+                                .font(.system(size: 6, weight: .medium, design: .monospaced))
+                                .foregroundColor(.secondary)
+                        }
+
+                        // Bar
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(barColor(for: delta))
+                            .frame(height: max(2, CGFloat(delta.delta / maxDelta) * 28))
+                            .overlay {
+                                if delta.isFuture {
+                                    StripedFill(color: Color.secondary.opacity(0.3))
+                                        .clipShape(RoundedRectangle(cornerRadius: 2))
+                                }
+                            }
+
+                        // Day label
+                        Text(delta.label)
+                            .font(.system(size: 6, weight: .medium))
+                            .foregroundColor(delta.isToday ? .primary : .secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            .frame(height: 44)
+            .overlay(alignment: .leading) {
+                // Average line
+                if avgPace > 0 && maxDelta > 0 {
+                    let lineY = CGFloat(1.0 - avgPace / maxDelta) * 28
+                    Rectangle()
+                        .stroke(style: StrokeStyle(lineWidth: 0.5, dash: [2, 2]))
+                        .foregroundColor(.secondary.opacity(0.5))
+                        .frame(height: 0.5)
+                        .offset(y: max(0, lineY - 14))
+                }
+            }
+
+            // Remaining budget
+            HStack(spacing: 4) {
+                Circle().fill(Color.green).frame(width: 4, height: 4)
+                Text("weekly_eta.remaining_budget".localized)
+                    .font(.system(size: 8, weight: .medium))
+                    .foregroundColor(.secondary)
+                Spacer()
+                Text("~\(Int(budgetPerDay))%/day")
+                    .font(.system(size: 8, weight: .semibold, design: .monospaced))
+                    .foregroundColor(.primary)
+            }
+            .padding(.top, 2)
+        }
+    }
+
+    private func barColor(for delta: DailyDelta) -> Color {
+        if delta.isToday { return .purple }
+        if delta.isFuture { return .secondary.opacity(0.2) }
+        return .orange
+    }
+}
+
+// MARK: - Weekly Budget Gauge View (Style C)
+struct WeeklyBudgetGaugeView: View {
+    let currentPercentage: Double
+    let resetTime: Date?
+    let profileId: UUID
+
+    private var tracker: DailyConsumptionTracker { .shared }
+
+    private var projected: Double {
+        tracker.projectedAtReset(currentPercentage: currentPercentage, resetTime: resetTime, profileId: profileId)
+    }
+
+    private var todayUsage: Double {
+        tracker.todayConsumption(currentPercentage: currentPercentage, profileId: profileId)
+    }
+
+    private var avgPace: Double {
+        tracker.averageDailyPace(currentPercentage: currentPercentage, profileId: profileId)
+    }
+
+    private var budgetPerDay: Double {
+        tracker.remainingBudgetPerDay(currentPercentage: currentPercentage, resetTime: resetTime)
+    }
+
+    private var projectedColor: Color {
+        if projected < 80 { return .green }
+        if projected < 95 { return .orange }
+        return .red
+    }
+
+    private var todayIndex: Int { Date().dayOfWeekIndex() }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Labels above gauge
+            HStack {
+                Text("Now \(Int(currentPercentage))%")
+                    .font(.system(size: 7, weight: .medium))
+                    .foregroundColor(.secondary)
+                Spacer()
+                Text("~\(Int(projected))%")
+                    .font(.system(size: 7, weight: .bold, design: .monospaced))
+                    .foregroundColor(projectedColor)
+            }
+
+            // Gauge track
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    // Background track
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.secondary.opacity(0.12))
+
+                    // Used portion - gradient fill
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(
+                            LinearGradient(
+                                colors: [.green, projectedColor],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: geometry.size.width * min(currentPercentage / 100.0, 1.0))
+
+                    // Forecast zone - striped
+                    if projected > currentPercentage {
+                        let startX = geometry.size.width * min(currentPercentage / 100.0, 1.0)
+                        let forecastWidth = geometry.size.width * min((projected - currentPercentage) / 100.0, 1.0 - currentPercentage / 100.0)
+                        StripedFill(color: projectedColor.opacity(0.25))
+                            .frame(width: forecastWidth)
+                            .offset(x: startX)
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                    }
+                }
+            }
+            .frame(height: 8)
+
+            // Day labels below gauge
+            HStack {
+                Text("Mon")
+                    .font(.system(size: 7, weight: .medium))
+                    .foregroundColor(.secondary)
+                Spacer()
+                Text("Mon (reset)")
+                    .font(.system(size: 7, weight: .medium))
+                    .foregroundColor(.secondary)
+            }
+
+            // Info rows with colored dots
+            VStack(spacing: 3) {
+                HStack(spacing: 4) {
+                    Circle().fill(Color.purple).frame(width: 4, height: 4)
+                    Text("weekly_eta.today_so_far".localized)
+                        .font(.system(size: 8, weight: .medium))
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text("+\(Int(todayUsage))%")
+                        .font(.system(size: 8, weight: .semibold, design: .monospaced))
+                        .foregroundColor(.primary)
+                }
+
+                HStack(spacing: 4) {
+                    Circle().fill(Color.orange).frame(width: 4, height: 4)
+                    Text("weekly_eta.daily_average".localized)
+                        .font(.system(size: 8, weight: .medium))
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text("~\(Int(avgPace))%/day")
+                        .font(.system(size: 8, weight: .semibold, design: .monospaced))
+                        .foregroundColor(.primary)
+                }
+
+                HStack(spacing: 4) {
+                    Circle().fill(Color.green).frame(width: 4, height: 4)
+                    Text("weekly_eta.remaining_budget".localized)
+                        .font(.system(size: 8, weight: .medium))
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text("~\(Int(budgetPerDay))%/day")
+                        .font(.system(size: 8, weight: .semibold, design: .monospaced))
+                        .foregroundColor(.primary)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Striped Fill Helper
+struct StripedFill: View {
+    let color: Color
+
+    var body: some View {
+        GeometryReader { geometry in
+            let stripeWidth: CGFloat = 3
+            let stripeSpacing: CGFloat = 3
+            Path { path in
+                var x: CGFloat = -geometry.size.height
+                while x < geometry.size.width + geometry.size.height {
+                    path.move(to: CGPoint(x: x, y: geometry.size.height))
+                    path.addLine(to: CGPoint(x: x + geometry.size.height, y: 0))
+                    path.addLine(to: CGPoint(x: x + geometry.size.height + stripeWidth, y: 0))
+                    path.addLine(to: CGPoint(x: x + stripeWidth, y: geometry.size.height))
+                    path.closeSubpath()
+                    x += stripeWidth + stripeSpacing
+                }
+            }
+            .fill(color)
         }
     }
 }

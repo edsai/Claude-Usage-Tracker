@@ -714,3 +714,23 @@
 "menubar.eta_at_limit" = "Usage limit reached";
 "menubar.eta_no_activity" = "No recent usage activity";
 "menubar.eta_no_activity_short" = "No activity";
+
+/* ==================== */
+/* MARK: - Weekly ETA Styles */
+/* ==================== */
+"weekly_eta.style_title" = "Weekly Estimate Style";
+"weekly_eta.projected" = "Projected";
+"weekly_eta.projected_desc" = "Show projected usage at reset with forecast bar";
+"weekly_eta.daily_bars" = "Daily Bars";
+"weekly_eta.daily_bars_desc" = "Bar chart of daily consumption (Mon–Sun)";
+"weekly_eta.budget_gauge" = "Budget Gauge";
+"weekly_eta.budget_gauge_desc" = "Linear gauge with used and forecast zones";
+"weekly_eta.projected_at_reset" = "Projected at reset";
+"weekly_eta.today_so_far" = "Today so far";
+"weekly_eta.daily_average" = "Daily average";
+"weekly_eta.remaining_budget" = "Remaining budget";
+"weekly_eta.daily_consumption" = "Daily consumption";
+"weekly_eta.below_avg" = "below avg";
+"weekly_eta.above_avg" = "above avg";
+"weekly_eta.per_day" = "%@/day";
+"weekly_eta.for_days" = "%@ for %@ days";

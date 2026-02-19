@@ -70,6 +70,30 @@ extension Date {
         return formatter.string(from: self)
     }
 
+    /// Returns the start of this date's day (midnight) in the given timezone
+    func startOfDay(in timezone: TimeZone = .current) -> Date {
+        var calendar = Calendar.current
+        calendar.timeZone = timezone
+        return calendar.startOfDay(for: self)
+    }
+
+    /// Returns the day-of-week index: 1=Mon, 2=Tue, ..., 7=Sun
+    func dayOfWeekIndex(in timezone: TimeZone = .current) -> Int {
+        var calendar = Calendar.current
+        calendar.timeZone = timezone
+        let weekday = calendar.component(.weekday, from: self) // 1=Sun, 2=Mon, ..., 7=Sat
+        // Convert to ISO: 1=Mon...7=Sun
+        return weekday == 1 ? 7 : weekday - 1
+    }
+
+    /// Returns a short localized day label (e.g., "Mon", "Tue")
+    func shortDayLabel(in timezone: TimeZone = .current) -> String {
+        let formatter = DateFormatter()
+        formatter.timeZone = timezone
+        formatter.dateFormat = "EEE"
+        return formatter.string(from: self)
+    }
+
     /// Returns time remaining rounded to full hours (e.g., "→2H", "→1H", "→<1H")
     func timeRemainingHoursString(from now: Date = Date()) -> String {
         let interval = self.timeIntervalSince(now)

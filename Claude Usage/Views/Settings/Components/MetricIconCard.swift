@@ -71,11 +71,18 @@ struct MetricIconCard: View {
                         .padding(.vertical, Spacing.xs)
 
                     SessionDisplayOptions(config: $config, onConfigChanged: onConfigChanged)
-                } else if metricType == .week && config.iconStyle == .percentageOnly {
+                } else if metricType == .week {
                     Divider()
                         .padding(.vertical, Spacing.xs)
 
-                    WeekDisplayOptions(config: $config, onConfigChanged: onConfigChanged)
+                    WeekETAStyleOptions(config: $config, onConfigChanged: onConfigChanged)
+
+                    if config.iconStyle == .percentageOnly {
+                        Divider()
+                            .padding(.vertical, Spacing.xs)
+
+                        WeekDisplayOptions(config: $config, onConfigChanged: onConfigChanged)
+                    }
                 } else if metricType == .api {
                     Divider()
                         .padding(.vertical, Spacing.xs)
@@ -123,6 +130,40 @@ private struct SessionDisplayOptions: View {
                 }
             }
             .toggleStyle(.switch)
+        }
+    }
+}
+
+// MARK: - Week ETA Style Options
+
+private struct WeekETAStyleOptions: View {
+    @Binding var config: MetricIconConfig
+    let onConfigChanged: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text("weekly_eta.style_title".localized)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(.secondary)
+
+            Picker("", selection: Binding(
+                get: { config.weeklyETAStyle },
+                set: { newValue in
+                    config.weeklyETAStyle = newValue
+                    onConfigChanged()
+                }
+            )) {
+                ForEach(WeeklyETAStyle.allCases, id: \.self) { style in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(style.displayName)
+                        Text(style.description)
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                    }
+                    .tag(style)
+                }
+            }
+            .pickerStyle(.radioGroup)
         }
     }
 }

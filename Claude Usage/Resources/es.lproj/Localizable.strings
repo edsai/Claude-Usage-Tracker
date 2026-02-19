@@ -705,3 +705,23 @@
 "menubar.eta_at_limit" = "Límite de uso alcanzado";
 "menubar.eta_no_activity" = "Sin actividad de uso reciente";
 "menubar.eta_no_activity_short" = "Sin actividad";
+
+/* ==================== */
+/* MARK: - Weekly ETA Styles */
+/* ==================== */
+"weekly_eta.style_title" = "Estilo de Estimación Semanal";
+"weekly_eta.projected" = "Proyectado";
+"weekly_eta.projected_desc" = "Mostrar uso proyectado al reinicio con barra de pronóstico";
+"weekly_eta.daily_bars" = "Barras Diarias";
+"weekly_eta.daily_bars_desc" = "Gráfico de barras del consumo diario (Lun–Dom)";
+"weekly_eta.budget_gauge" = "Indicador de Presupuesto";
+"weekly_eta.budget_gauge_desc" = "Indicador lineal con zonas de uso y pronóstico";
+"weekly_eta.projected_at_reset" = "Proyectado al reinicio";
+"weekly_eta.today_so_far" = "Hoy hasta ahora";
+"weekly_eta.daily_average" = "Promedio diario";
+"weekly_eta.remaining_budget" = "Presupuesto restante";
+"weekly_eta.daily_consumption" = "Consumo diario";
+"weekly_eta.below_avg" = "bajo el promedio";
+"weekly_eta.above_avg" = "sobre el promedio";
+"weekly_eta.per_day" = "%@/día";
+"weekly_eta.for_days" = "%@ por %@ días";

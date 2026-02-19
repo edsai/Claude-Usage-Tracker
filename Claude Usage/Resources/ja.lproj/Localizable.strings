@@ -724,3 +724,23 @@
 "menubar.eta_at_limit" = "使用制限に達しました";
 "menubar.eta_no_activity" = "最近の使用アクティビティなし";
 "menubar.eta_no_activity_short" = "活動なし";
+
+/* ==================== */
+/* MARK: - Weekly ETA Styles */
+/* ==================== */
+"weekly_eta.style_title" = "週次見積もりスタイル";
+"weekly_eta.projected" = "予測";
+"weekly_eta.projected_desc" = "リセット時の予測使用量を予報バーとともに表示";
+"weekly_eta.daily_bars" = "日別バー";
+"weekly_eta.daily_bars_desc" = "日別消費量の棒グラフ（月〜日）";
+"weekly_eta.budget_gauge" = "バジェットゲージ";
+"weekly_eta.budget_gauge_desc" = "使用済みゾーンと予測ゾーンを含むリニアゲージ";
+"weekly_eta.projected_at_reset" = "リセット時の予測";
+"weekly_eta.today_so_far" = "今日これまで";
+"weekly_eta.daily_average" = "日別平均";
+"weekly_eta.remaining_budget" = "残りバジェット";
+"weekly_eta.daily_consumption" = "日別消費量";
+"weekly_eta.below_avg" = "平均以下";
+"weekly_eta.above_avg" = "平均以上";
+"weekly_eta.per_day" = "%@/日";
+"weekly_eta.for_days" = "%@（%@日間）";

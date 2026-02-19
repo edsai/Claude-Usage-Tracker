@@ -113,6 +113,35 @@ enum WeekDisplayMode: String, Codable, CaseIterable {
     }
 }
 
+/// Display style for weekly ETA in the popover card
+enum WeeklyETAStyle: String, Codable, CaseIterable {
+    case projected    // "Projected ~83% at reset" + forecast bar + pace
+    case dailyBars    // Bar chart of Mon–Sun consumption
+    case budgetGauge  // Linear gauge with forecast zone
+
+    var displayName: String {
+        switch self {
+        case .projected:
+            return "weekly_eta.projected".localized
+        case .dailyBars:
+            return "weekly_eta.daily_bars".localized
+        case .budgetGauge:
+            return "weekly_eta.budget_gauge".localized
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .projected:
+            return "weekly_eta.projected_desc".localized
+        case .dailyBars:
+            return "weekly_eta.daily_bars_desc".localized
+        case .budgetGauge:
+            return "weekly_eta.budget_gauge_desc".localized
+        }
+    }
+}
+
 /// Configuration for a single metric icon
 struct MetricIconConfig: Codable, Equatable {
     var metricType: MenuBarMetricType
@@ -129,6 +158,9 @@ struct MetricIconConfig: Codable, Equatable {
     /// Session-specific configuration
     var showNextSessionTime: Bool
 
+    /// Weekly ETA display style (only used for week metric)
+    var weeklyETAStyle: WeeklyETAStyle
+
     init(
         metricType: MenuBarMetricType,
         isEnabled: Bool = false,
@@ -136,7 +168,8 @@ struct MetricIconConfig: Codable, Equatable {
         order: Int = 0,
         weekDisplayMode: WeekDisplayMode = .percentage,
         apiDisplayMode: APIDisplayMode = .remaining,
-        showNextSessionTime: Bool = false
+        showNextSessionTime: Bool = false,
+        weeklyETAStyle: WeeklyETAStyle = .projected
     ) {
         self.metricType = metricType
         self.isEnabled = isEnabled
@@ -145,6 +178,28 @@ struct MetricIconConfig: Codable, Equatable {
         self.weekDisplayMode = weekDisplayMode
         self.apiDisplayMode = apiDisplayMode
         self.showNextSessionTime = showNextSessionTime
+        self.weeklyETAStyle = weeklyETAStyle
+    }
+
+    // MARK: - Codable (Custom decoder for backwards compatibility)
+
+    enum CodingKeys: String, CodingKey {
+        case metricType, isEnabled, iconStyle, order
+        case weekDisplayMode, apiDisplayMode, showNextSessionTime
+        case weeklyETAStyle
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        metricType = try container.decode(MenuBarMetricType.self, forKey: .metricType)
+        isEnabled = try container.decode(Bool.self, forKey: .isEnabled)
+        iconStyle = try container.decode(MenuBarIconStyle.self, forKey: .iconStyle)
+        order = try container.decode(Int.self, forKey: .order)
+        weekDisplayMode = try container.decode(WeekDisplayMode.self, forKey: .weekDisplayMode)
+        apiDisplayMode = try container.decode(APIDisplayMode.self, forKey: .apiDisplayMode)
+        showNextSessionTime = try container.decode(Bool.self, forKey: .showNextSessionTime)
+        // New property - provide default value if missing (backwards compatibility)
+        weeklyETAStyle = try container.decodeIfPresent(WeeklyETAStyle.self, forKey: .weeklyETAStyle) ?? .projected
     }
 
     /// Default config for session (enabled by default)
