@@ -1092,6 +1092,13 @@ struct WeeklyBudgetGaugeView: View {
 
     private var todayIndex: Int { Date().dayOfWeekIndex() }
 
+    private var resetDayLabel: String {
+        if let reset = resetTime {
+            return "\(reset.shortDayLabel()) (reset)"
+        }
+        return "Mon (reset)"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // Labels above gauge
@@ -1138,11 +1145,11 @@ struct WeeklyBudgetGaugeView: View {
 
             // Day labels below gauge
             HStack {
-                Text("Mon")
+                Text(Date().shortDayLabel())
                     .font(.system(size: 7, weight: .medium))
                     .foregroundColor(.secondary)
                 Spacer()
-                Text("Mon (reset)")
+                Text(resetDayLabel)
                     .font(.system(size: 7, weight: .medium))
                     .foregroundColor(.secondary)
             }
