@@ -146,6 +146,29 @@ final class UsageRateTracker {
         return .estimatedTime(projectedFullDate)
     }
 
+    // MARK: - Smoothed Rate Access
+
+    /// Returns the smoothed weekly rate as percentage points per day,
+    /// or nil if insufficient data (used by DailyConsumptionTracker for blending).
+    func smoothedWeeklyDailyRate(for profileId: UUID) -> Double? {
+        let history = loadWeeklyHistory(for: profileId)
+        let windowSamples = history.samplesInWindow(seconds: Self.weeklyWindowSeconds)
+
+        guard windowSamples.count >= 2,
+              let first = windowSamples.first,
+              let last = windowSamples.last,
+              last.timestamp.timeIntervalSince(first.timestamp) >= Self.weeklyMinObservation else {
+            return nil
+        }
+
+        guard let ratePerSecond = computeWeightedRate(samples: windowSamples, halfLife: Self.weeklyHalfLife),
+              ratePerSecond > 0 else {
+            return nil
+        }
+
+        return ratePerSecond * 86400.0  // convert to %/day
+    }
+
     // MARK: - Weighted Linear Regression
 
     /// Compute the rate of change (percentage points per second) using

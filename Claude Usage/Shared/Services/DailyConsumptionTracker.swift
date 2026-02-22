@@ -143,23 +143,21 @@ final class DailyConsumptionTracker {
         profileId: UUID
     ) -> Double {
         let now = Date()
-        let todayIndex = now.dayOfWeekIndex()
-        let remainingDays = 7 - todayIndex // full days remaining after today
-
-        // Get today's partial remaining
-        let calendar = Calendar.current
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: now.startOfDay()) ?? now
-        let totalDaySeconds = endOfDay.timeIntervalSince(now.startOfDay())
-        let elapsedDaySeconds = now.timeIntervalSince(now.startOfDay())
-        let dayFractionRemaining = max(0, 1.0 - elapsedDaySeconds / totalDaySeconds)
+        guard let resetTime = resetTime, resetTime > now else {
+            return currentPercentage
+        }
 
         let avgPace = averageDailyPace(currentPercentage: currentPercentage, profileId: profileId)
-        let projected = currentPercentage + (Double(remainingDays) + dayFractionRemaining) * avgPace
+        let remainingDays = resetTime.timeIntervalSince(now) / 86400.0
+        let projected = currentPercentage + remainingDays * avgPace
 
         return min(projected, 100.0)
     }
 
-    /// Average daily consumption rate based on recorded snapshots
+    /// Average daily consumption rate, blending the smoothed real-time rate from
+    /// UsageRateTracker with the snapshot-based daily average.  Early in the window
+    /// (few snapshots) the smoothed rate dominates; after ~3 days the daily average
+    /// takes over since it captures full-day patterns (sleep, work, etc.).
     func averageDailyPace(
         currentPercentage: Double,
         profileId: UUID
@@ -167,21 +165,23 @@ final class DailyConsumptionTracker {
         let snapshots = loadSnapshots(for: profileId)
 
         guard let firstSnapshot = snapshots.first else {
-            return 0
+            // No snapshots at all — fall back to smoothed rate if available
+            return UsageRateTracker.shared.smoothedWeeklyDailyRate(for: profileId) ?? 0
         }
 
-        let now = Date()
-        let daysSinceFirst = max(1, Calendar.current.dateComponents([.day], from: firstSnapshot.date, to: now.startOfDay()).day ?? 1)
-
-        // Total consumption = current - first snapshot's starting percentage
+        // Snapshot-based daily average
         let totalConsumed = max(0, currentPercentage - firstSnapshot.weeklyPercentageAtStart)
+        let now = Date()
+        let effectiveDays = max(0.01, now.timeIntervalSince(firstSnapshot.date) / 86400.0)
+        let snapshotRate = totalConsumed / effectiveDays
 
-        // If we have today's partial data, count it as a fraction
-        let elapsedDaySeconds = now.timeIntervalSince(now.startOfDay())
-        let dayFraction = elapsedDaySeconds / 86400.0
-        let effectiveDays = Double(daysSinceFirst) + dayFraction
+        // Blend with smoothed rate: ramp from 100% smoothed → 0% over 3 days
+        if let smoothedRate = UsageRateTracker.shared.smoothedWeeklyDailyRate(for: profileId) {
+            let dailyWeight = min(1.0, effectiveDays / 3.0)
+            return snapshotRate * dailyWeight + smoothedRate * (1.0 - dailyWeight)
+        }
 
-        return effectiveDays > 0 ? totalConsumed / effectiveDays : 0
+        return snapshotRate
     }
 
     /// How much usage has been consumed today so far
@@ -206,15 +206,12 @@ final class DailyConsumptionTracker {
     ) -> Double {
         let remaining = max(0, 100.0 - currentPercentage)
         let now = Date()
-        let todayIndex = now.dayOfWeekIndex()
+        guard let resetTime = resetTime, resetTime > now else {
+            return remaining
+        }
 
-        // Days remaining including today's partial
-        let fullDaysRemaining = 7 - todayIndex
-        let elapsedDaySeconds = now.timeIntervalSince(now.startOfDay())
-        let dayFractionRemaining = max(0.1, 1.0 - elapsedDaySeconds / 86400.0)
-        let effectiveDaysRemaining = Double(fullDaysRemaining) + dayFractionRemaining
-
-        return effectiveDaysRemaining > 0 ? remaining / effectiveDaysRemaining : remaining
+        let effectiveDaysRemaining = max(0.1, resetTime.timeIntervalSince(now) / 86400.0)
+        return remaining / effectiveDaysRemaining
     }
 
     // MARK: - Cleanup
