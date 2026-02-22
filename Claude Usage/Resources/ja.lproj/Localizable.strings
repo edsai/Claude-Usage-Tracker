@@ -739,6 +739,7 @@
 "weekly_eta.today_so_far" = "今日これまで";
 "weekly_eta.daily_average" = "日別平均";
 "weekly_eta.remaining_budget" = "残りバジェット";
+"weekly_eta.est_limit" = "制限到達まで";
 "weekly_eta.daily_consumption" = "日別消費量";
 "weekly_eta.below_avg" = "平均以下";
 "weekly_eta.above_avg" = "平均以上";

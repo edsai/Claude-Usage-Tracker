@@ -737,6 +737,7 @@
 "weekly_eta.today_so_far" = "Oggi finora";
 "weekly_eta.daily_average" = "Media giornaliera";
 "weekly_eta.remaining_budget" = "Budget rimanente";
+"weekly_eta.est_limit" = "Limite stimato in";
 "weekly_eta.daily_consumption" = "Consumo giornaliero";
 "weekly_eta.below_avg" = "sotto media";
 "weekly_eta.above_avg" = "sopra media";

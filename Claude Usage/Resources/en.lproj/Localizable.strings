@@ -729,6 +729,7 @@
 "weekly_eta.today_so_far" = "Today so far";
 "weekly_eta.daily_average" = "Daily average";
 "weekly_eta.remaining_budget" = "Remaining budget";
+"weekly_eta.est_limit" = "Est. limit in";
 "weekly_eta.daily_consumption" = "Daily consumption";
 "weekly_eta.below_avg" = "below avg";
 "weekly_eta.above_avg" = "above avg";

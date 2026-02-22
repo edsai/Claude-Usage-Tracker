@@ -799,6 +799,7 @@
 "weekly_eta.today_so_far" = "오늘 현재까지";
 "weekly_eta.daily_average" = "일일 평균";
 "weekly_eta.remaining_budget" = "남은 예산";
+"weekly_eta.est_limit" = "제한 도달까지";
 "weekly_eta.daily_consumption" = "일일 소비량";
 "weekly_eta.below_avg" = "평균 이하";
 "weekly_eta.above_avg" = "평균 이상";

@@ -830,6 +830,13 @@ struct WeeklyProjectedView: View {
         tracker.remainingBudgetPerDay(currentPercentage: currentPercentage, resetTime: resetTime)
     }
 
+    private var daysToLimit: Double? {
+        guard avgPace > 0 else { return nil }
+        let remaining = 100.0 - currentPercentage
+        guard remaining > 0 else { return nil }
+        return remaining / avgPace
+    }
+
     private var projectedColor: Color {
         if projected < 80 { return .green }
         if projected < 95 { return .orange }
@@ -903,6 +910,23 @@ struct WeeklyProjectedView: View {
                     .foregroundColor(.secondary)
             }
 
+            // Est. limit row (shown when there's activity)
+            if let days = daysToLimit {
+                HStack(spacing: 4) {
+                    Image(systemName: projected >= 95 ? "exclamationmark.triangle.fill" : "clock")
+                        .font(.system(size: 8, weight: .medium))
+                        .foregroundColor(projected >= 95 ? .red : .orange)
+                    Text("weekly_eta.est_limit".localized)
+                        .font(.system(size: isPrimary ? 9 : 8, weight: .medium))
+                        .foregroundColor(.secondary)
+                    Text(formatDaysToLimit(days))
+                        .font(.system(size: isPrimary ? 9 : 8, weight: .bold, design: .monospaced))
+                        .foregroundColor(projected >= 95 ? .red : .orange)
+                    Spacer()
+                }
+                .padding(.top, 2)
+            }
+
             // Info rows
             VStack(spacing: 3) {
                 // Today so far
@@ -951,6 +975,22 @@ struct WeeklyProjectedView: View {
             }
             .padding(.top, 2)
         }
+    }
+}
+
+/// Format days-to-limit as a human-readable string like "~3d 12h" or "~5h 30m"
+private func formatDaysToLimit(_ days: Double) -> String {
+    let totalHours = days * 24.0
+    if totalHours < 1 {
+        return "< 1h"
+    } else if totalHours < 24 {
+        let hours = Int(totalHours)
+        let minutes = Int((totalHours - Double(hours)) * 60)
+        return minutes > 0 ? "~\(hours)h \(minutes)m" : "~\(hours)h"
+    } else {
+        let wholeDays = Int(days)
+        let remainingHours = Int((days - Double(wholeDays)) * 24)
+        return remainingHours > 0 ? "~\(wholeDays)d \(remainingHours)h" : "~\(wholeDays)d"
     }
 }
 
@@ -1084,6 +1124,13 @@ struct WeeklyBudgetGaugeView: View {
         tracker.remainingBudgetPerDay(currentPercentage: currentPercentage, resetTime: resetTime)
     }
 
+    private var daysToLimit: Double? {
+        guard avgPace > 0 else { return nil }
+        let remaining = 100.0 - currentPercentage
+        guard remaining > 0 else { return nil }
+        return remaining / avgPace
+    }
+
     private var projectedColor: Color {
         if projected < 80 { return .green }
         if projected < 95 { return .orange }
@@ -1152,6 +1199,22 @@ struct WeeklyBudgetGaugeView: View {
                 Text(resetDayLabel)
                     .font(.system(size: 7, weight: .medium))
                     .foregroundColor(.secondary)
+            }
+
+            // Est. limit row
+            if let days = daysToLimit {
+                HStack(spacing: 4) {
+                    Image(systemName: projected >= 95 ? "exclamationmark.triangle.fill" : "clock")
+                        .font(.system(size: 8, weight: .medium))
+                        .foregroundColor(projected >= 95 ? .red : .orange)
+                    Text("weekly_eta.est_limit".localized)
+                        .font(.system(size: 8, weight: .medium))
+                        .foregroundColor(.secondary)
+                    Text(formatDaysToLimit(days))
+                        .font(.system(size: 8, weight: .bold, design: .monospaced))
+                        .foregroundColor(projected >= 95 ? .red : .orange)
+                    Spacer()
+                }
             }
 
             // Info rows with colored dots

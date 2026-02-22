@@ -739,6 +739,7 @@
 "weekly_eta.today_so_far" = "Heute bisher";
 "weekly_eta.daily_average" = "Tagesdurchschnitt";
 "weekly_eta.remaining_budget" = "Verbleibendes Budget";
+"weekly_eta.est_limit" = "Limit erreicht in";
 "weekly_eta.daily_consumption" = "Tagesverbrauch";
 "weekly_eta.below_avg" = "unter Durchschnitt";
 "weekly_eta.above_avg" = "über Durchschnitt";
